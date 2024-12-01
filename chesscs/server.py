@@ -39,10 +39,18 @@ white_turn = True
 
 # game running until it ends
 while True:
+    fen = board.fen() # Get the FEN representation of the board
+    send_str = f"Board:\n{fen}"
+    c1.send(send_str.encode())
+    c2.send(send_str.encode())
     # sending board to white
     if white_turn:
-        send_str = "Board:\n" + str(board)
+        fen = board.fen() # Get the FEN representation of the board
+        send_str = f"Board:\n{fen}"
         c1.send(send_str.encode())
+
+        # Receive move 
+        print("Waiting for White to play")
         data = c1.recv(1024)
         print("Data received : ", data.decode())
         try:
@@ -61,6 +69,11 @@ while True:
                     break
                 else:
                     c1.send("Move is legal".encode())
+                    white_turn = not white_turn
+                    fen = board.fen() # Get the FEN representation of the board
+                    send_str = f"Board:\n{fen}"
+                    c1.send(send_str.encode())
+                    c2.send(send_str.encode())
             else:
                 c1.send("Illegal Move, try again".encode())
                 continue
@@ -69,8 +82,12 @@ while True:
             continue
     # same but for black
     else:
-        send_str = "Board:\n" + str(board)
+        # Send FEN to black player
+        fen = board.fen()  # Get the FEN representation of the board
+        send_str = f"Board:\n{fen}"
         c2.send(send_str.encode())
+        # Receive Move
+        print("Waiting for Black to play")
         data = c2.recv(1024)
         print("Data received : ", data.decode())
 
@@ -88,6 +105,11 @@ while True:
                     break
                 else:
                     c2.send("Move is legal".encode())
+                    white_turn = not white_turn
+                    fen = board.fen() # Get the FEN representation of the board
+                    send_str = f"Board:\n{fen}"
+                    c1.send(send_str.encode())
+                    c2.send(send_str.encode())
             else:
                 c2.send("Illegal Move, try again".encode())
                 continue
@@ -95,5 +117,4 @@ while True:
             c2.send("Wrong Format".encode())
             continue
 
-    white_turn = not white_turn
     # stopping when connection ends
