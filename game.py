@@ -22,6 +22,8 @@ class Game:
             self.peer.connect_to_peer(peer_host, peer_port)  # Connect to the host
 
         self.game_over = False
+        self.turn = "white"  # White always starts
+
 
     def game_loop(self):
         """Main game loop."""
@@ -49,8 +51,7 @@ class Game:
 
     def update_display(self):
         """Update the display (redraw the board, pieces, etc.)."""
-        self.board.draw_board()  # Draw the chess board
-        self.board.draw_pieces()  # Draw all pieces on the board
+        self.board.draw()
 
     def handle_player_move(self):
         """Let the player make a move and send it to the opponent."""
@@ -95,7 +96,14 @@ if __name__ == "__main__":
         is_host = True
     else:
         is_host = False
-
     
+    game = Game(
+        is_host=is_host,
+        host=args.address,
+        port=args.port,
+        peer_host=args.address if not is_host else None,
+        peer_port=args.port
+    )
+
 
     game.game_loop()

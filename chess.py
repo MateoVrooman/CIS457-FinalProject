@@ -328,12 +328,27 @@ class GameState:
         return board
 
     def apply_move(self, move):
-        """Update the game state by applying a move."""
-        # Simplified: Here we would apply the move to update the board
-        # and switch turns.
+        """
+        Update the game state by applying a move.
+        Validates the move before applying it.
+
+        :param move: A dictionary like {"from": (start_row, start_col), "to": (end_row, end_col)}
+        """
         from_row, from_col = move["from"]
         to_row, to_col = move["to"]
         piece = self.board[from_row][from_col]
+
+        if piece is None:
+            raise ValueError("No piece at the starting position.")
+        
+        # Validate the move
+        valid_moves = piece.get_valid_moves((from_row, from_col), self.board)
+        if (to_row, to_col) not in valid_moves:
+            raise ValueError(f"Invalid move for {type(piece).__name__} from {move['from']} to {move['to']}.")
+
+        # Execute the move
         self.board[to_row][to_col] = piece
         self.board[from_row][from_col] = None
-        self.current_turn = "black" if self.current_turn == "white" else "white"  # Switch turns
+
+        # Switch turns
+        self.current_turn = "black" if self.current_turn == "white" else "white"
