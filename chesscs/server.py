@@ -37,17 +37,16 @@ c2.send("You are playing as BLACK".encode())
 # turn order tracking
 white_turn = True
 
+fen = board.fen() # Get the FEN representation of the board
+send_str = f"Board:\n{fen}"
+c1.send(send_str.encode())
+c2.send(send_str.encode())
+
 # game running until it ends
 while True:
-    fen = board.fen() # Get the FEN representation of the board
-    send_str = f"Board:\n{fen}"
-    c1.send(send_str.encode())
-    c2.send(send_str.encode())
+    print("Turn: ", board.turn)
     # sending board to white
-    if white_turn:
-        fen = board.fen() # Get the FEN representation of the board
-        send_str = f"Board:\n{fen}"
-        c1.send(send_str.encode())
+    if board.turn:
 
         # Receive move 
         print("Waiting for White to play")
@@ -69,7 +68,6 @@ while True:
                     break
                 else:
                     c1.send("Move is legal".encode())
-                    white_turn = not white_turn
                     fen = board.fen() # Get the FEN representation of the board
                     send_str = f"Board:\n{fen}"
                     c1.send(send_str.encode())
@@ -82,10 +80,7 @@ while True:
             continue
     # same but for black
     else:
-        # Send FEN to black player
-        fen = board.fen()  # Get the FEN representation of the board
-        send_str = f"Board:\n{fen}"
-        c2.send(send_str.encode())
+        
         # Receive Move
         print("Waiting for Black to play")
         data = c2.recv(1024)
@@ -105,7 +100,6 @@ while True:
                     break
                 else:
                     c2.send("Move is legal".encode())
-                    white_turn = not white_turn
                     fen = board.fen() # Get the FEN representation of the board
                     send_str = f"Board:\n{fen}"
                     c1.send(send_str.encode())
@@ -116,5 +110,5 @@ while True:
         except ValueError:
             c2.send("Wrong Format".encode())
             continue
-
+    
     # stopping when connection ends

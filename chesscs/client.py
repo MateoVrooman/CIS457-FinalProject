@@ -3,11 +3,13 @@ import pygame
 import chess
 
 # Pygame GUI helper functions
-def draw_board(board):
+def draw_board(board, selected_square=None):
     # draw the chess board
     for row in range(8):
         for col in range(8):
             color = WHITE if (row + col) % 2 == 0 else BLACK
+            if selected_square is not None and selected_square == chess.square(col, 7 - row):
+                color = (255, 255, 100)  # Highlight color (yellow)
             pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
     
     # draw pieces
@@ -22,6 +24,7 @@ def draw_board(board):
             col = chess.square_file(square)
             row = 7 - chess.square_rank(square)  # Invert row for Pygame
             screen.blit(piece_image, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+
 
 def get_square_from_mouse(pos):
     # Return the square based on the mouse click position
@@ -56,25 +59,24 @@ print("Received:", response.decode())
 
 # Get player piece color
 color = response.decode().split()[-1]
-print(color)
 
 board = chess.Board()
 selected_square = None
-turn = "WHITE"
+
+server_data = s.recv(1024).decode()
+if "Board:" in server_data:
+    board_str = server_data.split("Board:")[1].strip()
+    board.set_fen(board_str)
+    print("Received initial board state:\n", str(board))
+draw_board(board)
+pygame.display.flip()
 
 while True:
     # Receive the initial board state at start of turn
-    print("Turn: ", turn)
-    server_data = s.recv(1024).decode()
-    if "Board:" in server_data:
-        board_str = server_data.split("Board:")[1].strip()
-        position_fen = board_str.split(' ')[0]
-        board.set_fen(position_fen)
-        print("Received board state:\n", str(board))
-    draw_board(board)
-    pygame.display.flip()
+    print("Turn: ", board.turn)
+    
 
-    if turn == color:
+    if board.turn == (color == "WHITE"): # board.turn is true for white and false for black
         move = None
         while move is None:
         # Handle user input for move
@@ -94,24 +96,25 @@ while True:
                         if move in board.legal_moves:
                             s.send(move.uci().encode()) # Send move to the server
                             response = s.recv(1024).decode()
-                            print(response)
+                            print("Response: ", response)
                             if "Move is legal" in response:
                                 board.push(move)
-                                turn = "WHITE" if turn == "BLACK" else "BLACK"
                         else: # Not a legal move, reset selected square and move
                             print("Not a legal move")
                             move = None
                         selected_square = None
-                        
+                    draw_board(board, selected_square)
+                    pygame.display.flip()
     else:
-        # Receive the board state
-        server_data = s.recv(1024).decode()
-        if "Board:" in server_data:
-            board_str = server_data.split("Board:")[1].strip()
-            position_fen = board_str.split(' ')[0]
-            board.set_fen(position_fen)
-            print("Received updated board state:\n", str(board))
-            turn = "WHITE" if turn == "BLACK" else "BLACK"
+        board.push(chess.Move.null())
+    
+    # Receive the board state
+    print("Waiting for updated board state...")
+    server_data = s.recv(1024).decode()
+    if "Board:" in server_data:
+        board_str = server_data.split("Board:")[1].strip()
+        board.set_fen(board_str)
+        print("Received updated board state:\n", str(board))
 
     # Draw the board and update the display after receiving an update from the server
     draw_board(board)
